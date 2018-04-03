@@ -17,12 +17,21 @@ from matplotlib.figure import Figure
 import matplotlib.animation as animation
 import csv
 
+import sys
+sys.path.insert(0, '/Users/graemecox/Documents/Capstone/Code/eegSvm/PreprocessingFunctions/')
+
+from eeg import *
+
+# patient = Patient(1317205,10,'/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_1/')
 
 
 class stream:
     def __init__(self):
-        self.titles = ['seizure_1.csv','seizure_2.csv','seizure_3.csv','seizure_4.csv','seizure_5.csv','normal.csv]
-        self.cap = cv2.VideoCapture('kitten.avi')
+        self.current_patient = Patient(1317205,23,175,180,'Tonic/Clonic Seizure','/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_1/')
+
+
+        self.titles = ['P1_seizure_1.csv','P1_seizure_2.csv','P1_seizure_3.csv','P1_seizure_4.csv','P1_seizure_5.csv','P1_normal.csv']
+        self.cap = cv2.VideoCapture('/Users/graemecox/Documents/Capstone/Code/VideoStream/kitten.avi')
         self.root = tk.Tk() #GUI Stuff
         self.frame = None
         self.stopEvent = None
@@ -42,7 +51,7 @@ class stream:
         #Set this image as a 'label' for tkinter
         self.panel = tk.Label(image=image)
         self.panel.image = image 
-        self.panel.place(x=200,y=0)
+        self.panel.place(x=200,y=20)
         
         #Need this so that code constantly updates frame
         self.stopEvent = threading.Event()
@@ -50,21 +59,28 @@ class stream:
         self.thread.start()
 
         # command='function you define')
-        self.btn1 = tk.Button(self.root, text="Change Seizure",command=self.ChangeSeizure)
+        self.btn1 = tk.Button(self.root, text="Change Dataset",command=self.ChangeSeizure)
         self.btn1.place(x=950,y=120)
         self.btn1.config(height = 1,width=12)
+
+        self.btn2 = tk.Button(self.root, text = "Change Patient",command = self.ChangePatient)
+        self.btn2.place(x=1150,y=120)
+        self.btn2.config(height = 1, width = 12)
         
 
-        #List Box
+        #List Box                       
         self.list = tk.Listbox(self.root)
-        self.list.insert(1,'Seizure_1.csv')
-        self.list.insert(2,'Seizure_2.csv')
-        self.list.insert(3,'Seizure_3.csv')
-        self.list.insert(4,'Seizure_4.csv')
-        self.list.insert(5,'Seizure_5.csv')
-        self.list.insert(5,'Normal.csv')
+        for i in range(len(self.titles)):
+            self.list.insert(i+1,self.titles[i])
         self.list.place(x=950, y=20)
-        self.list.config(height = 5, width = 60)
+        self.list.config(height = 5, width = 30)
+
+        self.list2 = tk.Listbox(self.root)
+        self.list2.insert(1,'Patient_1')
+        self.list2.insert(2,'Patient_2')
+        self.list2.insert(3,'Patient_3')
+        self.list2.place(x=1150, y=20)
+        self.list2.config(height=5, width = 30)
         
         
         #Title of Gui
@@ -78,26 +94,26 @@ class stream:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES,self.prevideo_removal_frames)
 
         #Patient Status
-        self.Id = tk.Label(self.root,text='Patient Id')
+        self.Id = tk.Label(self.root,text='Patient ID',background='black',foreground='white',font='16')
         self.Id.place(x=550,y=20)
-        self.Id_text = tk.Text(self.root, height = 1, width = 24)
+        self.Id_text = tk.Text(self.root, height = 1, width = 24,font='14')
         self.Id_text.place(x=700,y=20)
-        self.Age = tk.Label(self.root,text='Patient Age')
-        self.Age.place(x=550,y=60)
-        self.Age_text = tk.Text(self.root, height = 1, width = 24)
-        self.Age_text.place(x=700,y=60)
-        self.Symptom = tk.Label(self.root,text='Patient Symptom')
-        self.Symptom.place(x=550,y=100)
-        self.Symptom_text = tk.Text(self.root, height = 1, width = 24)
-        self.Symptom_text.place(x=700,y=100)
-        self.Weight = tk.Label(self.root,text='Patient Weight')
-        self.Weight.place(x=550,y=140)
-        self.Weight_text = tk.Text(self.root, height = 1, width = 24)
-        self.Weight_text.place(x=700,y=140)
-        self.Height = tk.Label(self.root,text='Patient Height')
-        self.Height.place(x=550,y=180)
-        self.Height_text = tk.Text(self.root, height = 1, width = 24)
-        self.Height_text.place(x=700,y=180)
+        self.Age = tk.Label(self.root,text='Patient Age',background='black',foreground='white',font='16')
+        self.Age.place(x=550,y=70)
+        self.Age_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Age_text.place(x=700,y=70)
+        self.Symptom = tk.Label(self.root,text='Patient Seizure',background='black',foreground='white',font='16')
+        self.Symptom.place(x=550,y=120)
+        self.Symptom_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Symptom_text.place(x=700,y=120)
+        self.Weight = tk.Label(self.root,text='Patient Weight',background='black',foreground='white',font='16')
+        self.Weight.place(x=550,y=170)
+        self.Weight_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Weight_text.place(x=700,y=170)
+        self.Height = tk.Label(self.root,text='Patient Height',background='black',foreground='white',font='16')
+        self.Height.place(x=550,y=220)
+        self.Height_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Height_text.place(x=700,y=220)
         self.counter = 1
         with open(self.titles[self.count],'r') as self.csv_file:
             self.csv_reader = csv.reader(self.csv_file)
@@ -106,25 +122,40 @@ class stream:
                 self.counter+=1
                 if self.counter == 2:
                     break
-        self.Id_text.insert(tk.END,self.patient_info[0])
-        self.Age_text.insert(tk.END,self.patient_info[1])
-        self.Symptom_text.insert(tk.END,self.patient_info[2])
-        self.Weight_text.insert(tk.END,self.patient_info[3])
-        self.Height_text.insert(tk.END,self.patient_info[4])
+
+
+        self.Id_text.insert(tk.END,str(self.current_patient.id))
+        self.Age_text.insert(tk.END,str(self.current_patient.age))
+        self.Symptom_text.insert(tk.END,str(self.current_patient.symptom))
+        self.Weight_text.insert(tk.END,str(self.current_patient.weight))
+        self.Height_text.insert(tk.END,str(self.current_patient.height))
+
+        # self.Id_text.insert(tk.END,self.patient_info[0])
+        # self.Age_text.insert(tk.END,self.patient_info[1])
+        # self.Symptom_text.insert(tk.END,self.patient_info[2])
+        # self.Weight_text.insert(tk.END,self.patient_info[3])
+        # self.Height_text.insert(tk.END,self.patient_info[4])
                        
 
         #Displaying Graphs
+        
         data = np.genfromtxt(self.titles[self.count],delimiter=',')
         self.x = range(data.shape[1])
         self.fig = Figure(figsize=(2.5,6))
+        self.fig.patch.set_facecolor("black")
         for i in range(data.shape[0]): # For number of electrodes
             self.a = self.fig.add_subplot(data.shape[0]/2,2,i+1)
             self.a.plot(self.x, data[i][:],color='red')
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+            self.a.tick_params(axis='x', colors='white')
+            self.a.tick_params(axis='y', colors='white')
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)       
         self.canvas.get_tk_widget().place(x=0,y=250)
         self.canvas.get_tk_widget().config(height = 700, width = 2000)
-        self.a.set_yticklabels([])        
         self.canvas.draw()
+        self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
+
+        # self.Title = tk.Label(self.root,text='Patient '+self.patient_info[0]+'\n Seizure #'+self.patient_info[2],background='black',foreground='white',font=("Courier",'24'))
+        self.Title.place(x=850,y=250)
         
         
     def videoLoop(self):
@@ -132,7 +163,7 @@ class stream:
         self.frame_counter +=1
         time.sleep(.025)
         
-        #Reset frame coutner if needed
+        #Reset frame counter if needed
         if self.frame_counter == self.cap.get(cv2.CAP_PROP_FRAME_COUNT):
             self.frame_counter = self.prevideo_removal_frames + self.postvideo_removal_frames
             self.cap.set(cv2.CAP_PROP_POS_FRAMES,self.prevideo_removal_frames)
@@ -159,8 +190,16 @@ class stream:
    #Buttons
     def ChangeSeizure(self):
         self.filename = self.list.get('active')
-        self.graph()
         self.patient()
+        self.graph()
+
+
+    def ChangePatient(self):
+        self.title = self.list.get('active')
+      #  self.titles = self.list.get('active')
+    #   self.patient()
+    #   self.graph()
+        
         
         
     def graph(self):
@@ -168,27 +207,31 @@ class stream:
         data = np.genfromtxt(self.filename,delimiter=',')
         self.x = range(data.shape[1])
         self.fig = Figure(figsize=(2.5,6))
+        self.fig.patch.set_facecolor("black")
         for i in range(data.shape[0]): # For number of electrodes
             self.a = self.fig.add_subplot(data.shape[0]/2,2,i+1)
             self.a.plot(self.x, data[i][:],color='red')
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+            self.a.tick_params(axis='x', colors='white')
+            self.a.tick_params(axis='y', colors='white')
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root) 
         self.canvas.get_tk_widget().place(x=0,y=250)
         self.canvas.get_tk_widget().config(height = 700, width = 2000)
-        self.a.set_yticklabels([])        
         self.canvas.draw()
+        self.Title = tk.Label(self.root,text='Patient '+self.patient_info[0]+'\n Seizure #'+self.patient_info[2],background='black',foreground='white',font=("Courier",'24'))
+        self.Title.place(x=850,y=250)
 
         
     def patient(self):
-        self.Id_text = tk.Text(self.root, height = 1, width = 24)
+        self.Id_text = tk.Text(self.root, height = 1, width = 24,font='14')
         self.Id_text.place(x=700,y=20)
-        self.Age_text = tk.Text(self.root, height = 1, width = 24)
-        self.Age_text.place(x=700,y=60)
-        self.Symptom_text = tk.Text(self.root, height = 1, width = 24)
-        self.Symptom_text.place(x=700,y=100)
-        self.Weight_text = tk.Text(self.root, height = 1, width = 24)
-        self.Weight_text.place(x=700,y=140)
-        self.Height_text = tk.Text(self.root, height = 1, width = 24)
-        self.Height_text.place(x=700,y=180)
+        self.Age_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Age_text.place(x=700,y=70)
+        self.Symptom_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Symptom_text.place(x=700,y=120)
+        self.Weight_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Weight_text.place(x=700,y=170)
+        self.Height_text = tk.Text(self.root, height = 1, width = 24,font='14')
+        self.Height_text.place(x=700,y=220)
         self.counter = 1
         with open(self.filename,'r') as self.csv_file:
             self.csv_reader = csv.reader(self.csv_file)
@@ -197,6 +240,11 @@ class stream:
                 self.counter+=1
                 if self.counter == 2:
                     break
+
+
+        # # self.Id_text.insert(tk.END, str(self.pat.id))
+        # print(self.patient_info[0])
+        # print(self.patient_info[1])
         self.Id_text.insert(tk.END,self.patient_info[0])
         self.Age_text.insert(tk.END,self.patient_info[1])
         self.Symptom_text.insert(tk.END,self.patient_info[2])
