@@ -27,8 +27,19 @@ from eeg import *
 
 class stream:
     def __init__(self):
-        self.current_patient = Patient(1317205,23,175,180,'Tonic/Clonic Seizure','/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_1/')
 
+        ## Define some example patients for us to use
+        # temp_pat= Patient(1317205,23,175,180,'Tonic/Clonic Seizure','/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_1/')
+        # self.patient_list = []
+        # self.patient_list.append(temp_pat)
+        # temp_pat = Patient(1314569,22,200,140,'Infantile','/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_2/')
+        # self.patient_list.append(temp_pat)
+        # temp_pat = Patient(1315405,22, 180,182,'Grand Mal','/Users/graemecox/Documents/Capstone/Data/EEG_Data/Dog_3/')
+        # self.patient_list.append(temp_pat)
+
+        self.patient_list = np.load('patient_list.npy')
+        self.patient_index = 0
+        self.current_patient = self.patient_list[self.patient_index]
 
         self.titles = ['P1_seizure_1.csv','P1_seizure_2.csv','P1_seizure_3.csv','P1_seizure_4.csv','P1_seizure_5.csv','P1_normal.csv']
         self.cap = cv2.VideoCapture('/Users/graemecox/Documents/Capstone/Code/VideoStream/kitten.avi')
@@ -76,9 +87,12 @@ class stream:
         self.list.config(height = 5, width = 30)
 
         self.list2 = tk.Listbox(self.root)
-        self.list2.insert(1,'Patient_1')
-        self.list2.insert(2,'Patient_2')
-        self.list2.insert(3,'Patient_3')
+        #List all 
+        for i in range(len(self.patient_list)):
+            self.list2.insert(i+1, str(self.patient_list[i].id))
+        # self.list2.insert(1,'Patient_1')
+        # self.list2.insert(2,'Patient_2')
+        # self.list2.insert(3,'Patient_3')
         self.list2.place(x=1150, y=20)
         self.list2.config(height=5, width = 30)
         
@@ -154,6 +168,7 @@ class stream:
         self.canvas.draw()
         self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
 
+
         # self.Title = tk.Label(self.root,text='Patient '+self.patient_info[0]+'\n Seizure #'+self.patient_info[2],background='black',foreground='white',font=("Courier",'24'))
         self.Title.place(x=850,y=250)
         
@@ -195,7 +210,19 @@ class stream:
 
 
     def ChangePatient(self):
-        self.title = self.list.get('active')
+        temp_id = self.list2.get('active')
+
+        for i in range(len(self.patient_list)):
+            if str(self.patient_list[i].id) == str(temp_id):
+                temp_index = i
+
+        self.current_patient = self.patient_list[temp_index]
+        self.patient_index = temp_index
+        self.filename = self.list.get('active') #Get current selected seizure (CHANGE LATER)
+        self.patient()
+        self.graph()
+        # temp_index = 
+        # print(self.title)
       #  self.titles = self.list.get('active')
     #   self.patient()
     #   self.graph()
@@ -217,7 +244,7 @@ class stream:
         self.canvas.get_tk_widget().place(x=0,y=250)
         self.canvas.get_tk_widget().config(height = 700, width = 2000)
         self.canvas.draw()
-        self.Title = tk.Label(self.root,text='Patient '+self.patient_info[0]+'\n Seizure #'+self.patient_info[2],background='black',foreground='white',font=("Courier",'24'))
+        self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
         self.Title.place(x=850,y=250)
 
         
@@ -245,11 +272,18 @@ class stream:
         # # self.Id_text.insert(tk.END, str(self.pat.id))
         # print(self.patient_info[0])
         # print(self.patient_info[1])
-        self.Id_text.insert(tk.END,self.patient_info[0])
-        self.Age_text.insert(tk.END,self.patient_info[1])
-        self.Symptom_text.insert(tk.END,self.patient_info[2])
-        self.Weight_text.insert(tk.END,self.patient_info[3])
-        self.Height_text.insert(tk.END,self.patient_info[4])
+
+        self.Id_text.insert(tk.END,str(self.current_patient.id))
+        self.Age_text.insert(tk.END,str(self.current_patient.age))
+        self.Symptom_text.insert(tk.END,str(self.current_patient.symptom))
+        self.Weight_text.insert(tk.END,str(self.current_patient.weight))
+        self.Height_text.insert(tk.END,str(self.current_patient.height))
+
+        # self.Id_text.insert(tk.END,self.patient_info[0])
+        # self.Age_text.insert(tk.END,self.patient_info[1])
+        # self.Symptom_text.insert(tk.END,self.patient_info[2])
+        # self.Weight_text.insert(tk.END,self.patient_info[3])
+        # self.Height_text.insert(tk.END,self.patient_info[4])
 
     #Function called when we close the window
     def onClose(self):
