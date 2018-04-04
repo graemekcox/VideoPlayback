@@ -38,8 +38,15 @@ class stream:
         # self.patient_list.append(temp_pat)
 
         self.patient_list = np.load('patient_list.npy')
-        self.patient_index = 0
+        self.patient_index = 1
         self.current_patient = self.patient_list[self.patient_index]
+        self.ictalIndex = 0
+
+        len_seiz = len(self.current_patient.ictalSamples)
+
+        self.titles = []
+        for i in range(len_seiz):
+            self.titles.append('Seizure_'+str(i))
 
         self.titles = ['P1_seizure_1.csv','P1_seizure_2.csv','P1_seizure_3.csv','P1_seizure_4.csv','P1_seizure_5.csv','P1_normal.csv']
         self.cap = cv2.VideoCapture('/Users/graemecox/Documents/Capstone/Code/VideoStream/kitten.avi')
@@ -231,7 +238,9 @@ class stream:
         
     def graph(self):
         #Graph
-        data = np.genfromtxt(self.filename,delimiter=',')
+        # data = np.genfromtxt(self.filename,delimiter=',')
+        data = np.array(self.current_patient.ictalSamples[self.ictalIndex].data)
+
         self.x = range(data.shape[1])
         self.fig = Figure(figsize=(2.5,6))
         self.fig.patch.set_facecolor("black")
