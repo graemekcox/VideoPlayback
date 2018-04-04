@@ -40,15 +40,20 @@ class stream:
         self.patient_list = np.load('patient_list.npy')
         self.patient_index = 1
         self.current_patient = self.patient_list[self.patient_index]
-        self.ictalIndex = 0
-
-        len_seiz = len(self.current_patient.ictalSamples)
+        self.index = 0
+        self.isSeiz = 1 #Flag whether seizure or normal
 
         self.titles = []
-        for i in range(len_seiz):
-            self.titles.append('Seizure_'+str(i))
 
-        self.titles = ['P1_seizure_1.csv','P1_seizure_2.csv','P1_seizure_3.csv','P1_seizure_4.csv','P1_seizure_5.csv','P1_normal.csv']
+        #Add ictal segments
+        for i in range(len(self.current_patient.ictalSamples)):
+            self.titles.append('Seizure_'+str(i))
+        #Add normal segments
+        for i in range(len(self.current_patient.interictalSamples)):
+            self.titles.append('Normal_' + str(i))
+
+
+        # self.titles = ['P1_seizure_1.csv','P1_seizure_2.csv','P1_seizure_3.csv','P1_seizure_4.csv','P1_seizure_5.csv','P1_normal.csv']
         self.cap = cv2.VideoCapture('/Users/graemecox/Documents/Capstone/Code/VideoStream/kitten.avi')
         self.root = tk.Tk() #GUI Stuff
         self.frame = None
@@ -72,9 +77,12 @@ class stream:
         self.panel.place(x=200,y=20)
         
         #Need this so that code constantly updates frame
+        self.frame_counter = 0  
         self.stopEvent = threading.Event()
         self.thread = threading.Timer(1/1000,self.videoLoop) #Set timer that calls function every 1/1000 secondss
-        self.thread.start()
+
+
+        # self.thread.start()
 
         # command='function you define')
         self.btn1 = tk.Button(self.root, text="Change Dataset",command=self.ChangeSeizure)
@@ -86,12 +94,14 @@ class stream:
         self.btn2.config(height = 1, width = 12)
         
 
-        #List Box                       
-        self.list = tk.Listbox(self.root)
-        for i in range(len(self.titles)):
-            self.list.insert(i+1,self.titles[i])
-        self.list.place(x=950, y=20)
-        self.list.config(height = 5, width = 30)
+        #List Box        
+        self.list = tk.Listbox(self.root)     
+        self.updateDatsetListbox()         
+        # self.list = tk.Listbox(self.root)
+        # for i in range(len(self.titles)):
+        #     self.list.insert(i+1,self.titles[i])
+        # self.list.place(x=950, y=20)
+        # self.list.config(height = 5, width = 30)
 
         self.list2 = tk.Listbox(self.root)
         #List all 
@@ -108,7 +118,7 @@ class stream:
         self.root.wm_title("Seizure Viewer") 
         self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
 
-        #Frame counter initialization
+        #Frame counter initialization 
         self.prevideo_removal_frames = 0 #This value removes the frames of video left
         self.postvideo_removal_frames = 0 #This value removes the frames before the video 
         self.frame_counter = self.prevideo_removal_frames + self.postvideo_removal_frames
@@ -136,13 +146,13 @@ class stream:
         self.Height_text = tk.Text(self.root, height = 1, width = 24,font='14')
         self.Height_text.place(x=700,y=220)
         self.counter = 1
-        with open(self.titles[self.count],'r') as self.csv_file:
-            self.csv_reader = csv.reader(self.csv_file)
-            for line in self.csv_reader:
-                self.patient_info = line
-                self.counter+=1
-                if self.counter == 2:
-                    break
+        # with open(self.titles[self.count],'r') as self.csv_file:
+        #     self.csv_reader = csv.reader(self.csv_file)
+        #     for line in self.csv_reader:
+        #         self.patient_info = line
+        #         self.counter+=1
+        #         if self.counter == 2:
+        #             break
 
 
         self.Id_text.insert(tk.END,str(self.current_patient.id))
@@ -156,24 +166,25 @@ class stream:
         # self.Symptom_text.insert(tk.END,self.patient_info[2])
         # self.Weight_text.insert(tk.END,self.patient_info[3])
         # self.Height_text.insert(tk.END,self.patient_info[4])
-                       
+                    
 
         #Displaying Graphs
-        
-        data = np.genfromtxt(self.titles[self.count],delimiter=',')
-        self.x = range(data.shape[1])
-        self.fig = Figure(figsize=(2.5,6))
-        self.fig.patch.set_facecolor("black")
-        for i in range(data.shape[0]): # For number of electrodes
-            self.a = self.fig.add_subplot(data.shape[0]/2,2,i+1)
-            self.a.plot(self.x, data[i][:],color='red')
-            self.a.tick_params(axis='x', colors='white')
-            self.a.tick_params(axis='y', colors='white')
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)       
-        self.canvas.get_tk_widget().place(x=0,y=250)
-        self.canvas.get_tk_widget().config(height = 700, width = 2000)
-        self.canvas.draw()
-        self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
+
+        self.graph()
+        # data = np.genfromtxt(self.titles[self.count],delimiter=',')
+        # self.x = range(data.shape[1])
+        # self.fig = Figure(figsize=(2.5,6))
+        # self.fig.patch.set_facecolor("black")
+        # for i in range(data.shape[0]): # For number of electrodes
+        #     self.a = self.fig.add_subplot(data.shape[0]/2,2,i+1)
+        #     self.a.plot(self.x, data[i][:],color='red')
+        #     self.a.tick_params(axis='x', colors='white')
+        #     self.a.tick_params(axis='y', colors='white')
+        # self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)       
+        # self.canvas.get_tk_widget().place(x=0,y=250)
+        # self.canvas.get_tk_widget().config(height = 700, width = 2000)
+        # self.canvas.draw()
+        # self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
 
 
         # self.Title = tk.Label(self.root,text='Patient '+self.patient_info[0]+'\n Seizure #'+self.patient_info[2],background='black',foreground='white',font=("Courier",'24'))
@@ -212,6 +223,17 @@ class stream:
    #Buttons
     def ChangeSeizure(self):
         self.filename = self.list.get('active')
+
+        # Get seizure index from selection title
+        temp = self.filename.split("_") 
+        if temp[0] == "Seizure":
+            self.isSeiz = 1
+
+        elif temp[0] == "Normal":
+            self.isSeiz = 0
+        self.index = int(temp[1])
+
+
         self.patient()
         self.graph()
 
@@ -223,9 +245,25 @@ class stream:
             if str(self.patient_list[i].id) == str(temp_id):
                 temp_index = i
 
-        self.current_patient = self.patient_list[temp_index]
-        self.patient_index = temp_index
+
+
+        self.index = 0 # data index
+        self.patient_index = temp_index #index for patient list
+        self.current_patient = self.patient_list[self.patient_index]
+        
+
+        self.titles = []
+
+        #Add ictal segments
+        for i in range(len(self.current_patient.ictalSamples)):
+            self.titles.append('Seizure_'+str(i))
+        #Add normal segments
+        for i in range(len(self.current_patient.interictalSamples)):
+            self.titles.append('Normal_' + str(i))
+
+
         self.filename = self.list.get('active') #Get current selected seizure (CHANGE LATER)
+        self.updateDatsetListbox()
         self.patient()
         self.graph()
         # temp_index = 
@@ -234,12 +272,22 @@ class stream:
     #   self.patient()
     #   self.graph()
         
-        
+    def updateDatsetListbox(self):
+        self.list.delete('0','end')
+        for i in range(len(self.titles)):
+            self.list.insert(i+1,self.titles[i])
+        self.list.place(x=950, y=20)
+        self.list.config(height = 5, width = 30)
+
         
     def graph(self):
         #Graph
         # data = np.genfromtxt(self.filename,delimiter=',')
-        data = np.array(self.current_patient.ictalSamples[self.ictalIndex].data)
+        
+        if self.isSeiz:
+            data = np.array(self.current_patient.ictalSamples[self.index].data)
+        else:
+            data = np.array(self.current_patient.interictalSamples[self.index].data)
 
         self.x = range(data.shape[1])
         self.fig = Figure(figsize=(2.5,6))
@@ -253,7 +301,12 @@ class stream:
         self.canvas.get_tk_widget().place(x=0,y=250)
         self.canvas.get_tk_widget().config(height = 700, width = 2000)
         self.canvas.draw()
-        self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.current_patient.ictalIndex),background='black',foreground='white',font=("Courier",'24'))
+        if self.isSeiz:
+            self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Seizure #'+str(self.index),background='black',foreground='white',font=("Courier",'24'))
+        else:
+             self.Title = tk.Label(self.root,text='Patient '+str(self.current_patient.id)+'\n Normal #'+str(self.index),background='black',foreground='white',font=("Courier",'24'))
+            
+
         self.Title.place(x=850,y=250)
 
         
@@ -268,14 +321,31 @@ class stream:
         self.Weight_text.place(x=700,y=170)
         self.Height_text = tk.Text(self.root, height = 1, width = 24,font='14')
         self.Height_text.place(x=700,y=220)
-        self.counter = 1
-        with open(self.filename,'r') as self.csv_file:
-            self.csv_reader = csv.reader(self.csv_file)
-            for line in self.csv_reader:
-                self.patient_info = line
-                self.counter+=1
-                if self.counter == 2:
-                    break
+
+
+
+        # self.ictalIndex = 0
+        # self.titles = []
+        # for i in range(len(self.current_patient.ictalSamples)):
+        #     self.titles.append('Seizure_'+str(i))
+
+        # self.titles = []
+
+        # #Add ictal segments
+        # for i in range(len(self.current_patient.ictalSamples)):
+        #     self.titles.append('Seizure_'+str(i))
+        # #Add normal segments
+        # for i in range(len(self.current_patient.interictalSamples)):
+        #     self.titles.append('Normal_' + str(i))
+
+        # self.counter = 1
+        # with open(self.filename,'r') as self.csv_file:
+        #     self.csv_reader = csv.reader(self.csv_file)
+        #     for line in self.csv_reader:
+        #         self.patient_info = line
+        #         self.counter+=1
+        #         if self.counter == 2:
+        #             break
 
 
         # # self.Id_text.insert(tk.END, str(self.pat.id))
@@ -299,8 +369,12 @@ class stream:
         self.stopEvent.set()
         self.root.destroy()
 
+    def run(self): #Call to start thread
+        self.thread.start()
+
 def main():
     obj = stream()
+    obj.run()
     obj.root.mainloop()
 
 if __name__ == '__main__':
